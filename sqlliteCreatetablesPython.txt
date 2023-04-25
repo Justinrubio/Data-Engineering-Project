@@ -1,0 +1,35 @@
+connectDB = sqlite3.connect('internship.db')
+
+cursor = connectDB.cursor()
+
+cursor.execute('''CREATE TABLE students (
+                    ID INTEGER PRIMARY KEY,
+                    name TEXT
+                )''')
+
+cursor.execute('''CREATE TABLE companies (
+                  ID INTEGER PRIMARY KEY,
+                  name TEXT
+                  )''')
+
+cursor.execute('''CREATE TABLE tags (
+                  ID INTEGER PRIMARY KEY,
+                  name TEXT
+                  )''')
+
+cursor.execute('''CREATE TABLE internship (
+                  ID INTEGER PRIMARY KEY,
+                  title TEXT,
+                  s_id INTEGER,
+                  tag_id INTEGER,
+                  tag_name TEXT,
+                  start_date TEXT,
+                  end_date TEXT,
+                  c_id INTEGER,
+                  FOREIGN KEY (s_id) REFERENCES students(ID),
+                  FOREIGN KEY (c_id) REFERENCES companies(ID),
+                  FOREIGN KEY (tag_id) REFERENCES tags(ID)
+                  )''')
+
+connectDB.commit()
+connectDB.close()

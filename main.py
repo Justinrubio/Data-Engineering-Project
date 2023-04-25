@@ -155,7 +155,7 @@ class PageTwo(tk.Frame):
         secFrame.tkraise()
 
 class mainPage(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, ):
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Main Page", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
@@ -164,10 +164,13 @@ class mainPage(tk.Frame):
                            command=lambda: controller.show_frame(AddInternship))
         button.pack()
 
-        button = tk.Button(self, text="Edit Internship",
-                           command=lambda controller.show_frame(editInternship))
+        button2 = tk.Button(self, text="Edit Internship",
+                           command=lambda: controller.show_frame(editInternship))
+        button2.pack()
 
         controller.frames[AddInternship] = AddInternship(parent, controller)
+
+        controller.frames[editInternship] = editInternship(parent, controller)
 
 class AddInternship(tk.Frame):
     def __init__(self, parent, controller):
@@ -219,6 +222,7 @@ class AddInternship(tk.Frame):
         c = conn.cursor()
 
         # Insert the values into the internship table
+        #May changes (s_id doesnt need to be filled out)
         c.execute("INSERT INTO internship (title, s_id, tag_id, start_date, end_date, c_id) VALUES (?, ?, ?, ?, ?, ?)",
                   (title, s_id, tag_id, start_date, end_date, c_id))
 
@@ -230,6 +234,9 @@ class AddInternship(tk.Frame):
         self.title_entry.delete(0, tk.END)
         self.s_id_entry.delete(0, tk.END)
         self.tag_id_entry.delete(0, tk.END)
+        self.start_date_entry.delete(0, tk.END)
+        self.end_date_entry.delete(0, tk.END)
+        self.c_id_entry.delete(0, tk.END)
 
     def go_to_mainPage(self):
         # Destroy the current window
@@ -239,6 +246,98 @@ class AddInternship(tk.Frame):
         root = tk.Tk()
         main_menu = mainPage(root)
         main_menu.mainloop()
+
+class editInternship(tk.Frame):
+    def __init__(self, parent, controller, internship_id):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        self.parent = parent
+        self.internship_id = internship_id
+
+        label = tk.Label(self, text="Edit Internship", font=LARGE_FONT)
+        label.pack(pady=10, padx=10)
+
+        self.conn = sqlite3.connect("internship.db")
+        self.cursor = self.conn.cursor()
+
+        self.label_title = tk.Label(self, text="Edit Title: ")
+        self.label_title.pack()
+
+        self.title_edit = tk.StringVar()
+        self.enter_title = tk.Entry(self, textvariable=self.title_edit)
+        self.enter_title.pack()
+
+        self.label_tag_id = tk.Label(self, text="Edit Tag Id: ")
+        self.label_tag_id.pack()
+
+        self.tag_id_edit = tk.IntVar()
+        self.tag_id_enter = tk.Entry(self, textvariable=self.tag_id_edit)
+        self.tag_id_enter.pack()
+
+        self.label_start_date = tk.Label(self, text="Edit Start Date: ")
+        self.label_start_date.pack()
+
+        self.start_date_edit = tk.IntVar()
+        self.start_date_enter = tk.Entry(self, textvariable=self.start_date_edit)
+        self.start_date_enter.pack()
+
+        self.label_end_date = tk.Label(self, text="Edit End Date: ")
+        self.label_end_date.pack()
+
+        self.end_date_edit = tk.IntVar()
+        self.end_date_enter = tk.Entry(self, textvariable=self.end_date_edit)
+        self.end_date_enter.pack()
+
+        self.label_c_id = tk.Label(self, text="Edit Company ID: ")
+        self.label_c_id.pack()
+
+        self.c_id_edit = tk.IntVar()
+        self.c_id_enter = tk.Entry(self, textvariable=self.c_id_edit)
+        self.c_id_enter.pack()
+
+        self.button_edit = tk.Button(self, text="Edit Internship", command=self.edit_internship)
+        self.button_edit.pack()
+
+        self.button_cancel = tk.Button(self, text="Cancel", command=self.cancel_edit)
+        self.button_cancel.pack()
+
+        self.load_intern_data()
+
+
+    def load_intern_data(self):
+        self.cursor.execute("SELECT * FROM internship WHERE ID=?", (self.internship_id,))
+        load_data_result = self.cursor.fetchone()
+
+        if load_data_result:
+            self.title_edit.set(load_data_result[1])
+            self.tag_id_edit.set(load_data_result[2])
+            self.start_date_edit.set(load_data_result[3])
+            self.end_date_edit.set(load_data_result[4])
+            self.c_id_edit.set(load_data_result[5])
+
+    def edit_internship(self):
+        title = self.title_edit.get()
+        tag_id = self.tag_id_edit.get()
+        start_date = self.start_date_edit.get()
+        end_date = self.end_date_edit.get()
+        c_id = self.c_id_edit.get()
+
+        self.cursor.execute("UPDATE internship SET title=?, tag_id=?, start_date=?, end_date=?, c_id=? WHERE ID=?", (title, tag_id, start_date, end_date, c_id))
+        self.conn.commit()
+        tk.messagebox.showinfo("Success", "Internship updated successfully.")
+
+    def cancel_edit(self):
+        self.controller.show_frame(mainPage)
+
+
+
+
+
+
+
+
+
+
 
 
 
