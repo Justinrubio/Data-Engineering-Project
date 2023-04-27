@@ -23,7 +23,7 @@ class InternApp(tk.Tk):
 
         self.frames = {}
 
-        for F in {StartPage, PageOne, PageTwo, AddInternship, mainPage}:
+        for F in {StartPage, PageOne, PageTwo, AddInternship, editInternship, ListInternship, SearchInternship, mainPage}:
             frame = F(self.container, self)
 
             self.frames[F] = frame
@@ -163,14 +163,25 @@ class mainPage(tk.Frame):
         button = tk.Button(self, text="Add Internship",
                            command=lambda: controller.show_frame(AddInternship))
         button.pack()
+        controller.frames[AddInternship] = AddInternship(parent, controller)
 
         button2 = tk.Button(self, text="Edit Internship",
                            command=lambda: controller.show_frame(editInternship))
         button2.pack()
 
-        controller.frames[AddInternship] = AddInternship(parent, controller)
 
         controller.frames[editInternship] = editInternship(parent, controller)
+
+        button2 = tk.Button(self, text="Internship List",
+                            command=lambda: controller.show_frame(ListInternship))
+        button2.pack()
+        controller.frames[ListInternship] = ListInternship(parent, controller)
+
+        button3 = tk.Button(self, text="Search for internship",
+                            command=lambda: controller.show_frame(SearchInternship))
+        button3.pack()
+        controller.frames[SearchInternship] = SearchInternship(parent, controller)
+
 
 class AddInternship(tk.Frame):
     def __init__(self, parent, controller):
@@ -205,8 +216,9 @@ class AddInternship(tk.Frame):
         add_button.grid(row=6, column=1, padx=10, pady=10)
 
         # Create a button to go back to the main menu
-        main_menu_button = tk.Button(self, text="Back to Main Menu", command=lambda: controller.show_frame("mainPage"))
-        main_menu_button.grid(row=6, column=0, padx=10, pady=10)
+        button_cancel = tk.Button(self, text="Cancel", command=self.cancel_add)
+        button_cancel.grid(row=6, column=1, padx=10, pady=10)
+
 
     def add_internship(self):
         title = self.title_entry.get()
@@ -238,27 +250,33 @@ class AddInternship(tk.Frame):
         self.end_date_entry.delete(0, tk.END)
         self.c_id_entry.delete(0, tk.END)
 
-    def go_to_mainPage(self):
+    def cancel_add(self):
         # Destroy the current window
-        self.destroy()
+        self.controller.show_frame(mainPage)
 
-        # Create the main menu window
-        root = tk.Tk()
-        main_menu = mainPage(root)
-        main_menu.mainloop()
+
 
 class editInternship(tk.Frame):
-    def __init__(self, parent, controller, internship_id):
+    def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         self.parent = parent
-        self.internship_id = internship_id
+
+
+
 
         label = tk.Label(self, text="Edit Internship", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
         self.conn = sqlite3.connect("internship.db")
         self.cursor = self.conn.cursor()
+
+        self.student_id_label = tk.Label(self, text= "Enter Student ID: ")
+        self.student_id_label.pack()
+
+        self.student_id_enter = tk.IntVar()
+        self.student_id_enter_dig = tk.Entry(self, textvariable=self.student_id_enter)
+        self.student_id_enter_dig.pack()
 
         self.label_title = tk.Label(self, text="Edit Title: ")
         self.label_title.pack()
@@ -305,7 +323,8 @@ class editInternship(tk.Frame):
 
 
     def load_intern_data(self):
-        self.cursor.execute("SELECT * FROM internship WHERE ID=?", (self.internship_id,))
+        new_data = self.student_id_enter.get()
+        self.cursor.execute("SELECT * FROM internship WHERE s_id=?", (new_data,))
         load_data_result = self.cursor.fetchone()
 
         if load_data_result:
@@ -328,6 +347,98 @@ class editInternship(tk.Frame):
 
     def cancel_edit(self):
         self.controller.show_frame(mainPage)
+
+class ListInternship(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Internship List", font=LARGE_FONT)
+        label.pack(pady=10, padx=10)
+
+        self.tree = ttk.Treeview(self, columns=("ID", "title", "Tag ID", "Start Date", "End Date", "Company ID"))
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("title", text="Title")
+        self.tree.heading("Tag ID", text="Tag ID")
+        self.tree.heading("Start Date", text="Start Date")
+        self.tree.heading("End Date", text="End Date")
+        self.tree.heading("Company ID", text="Company ID")
+        self.tree.pack()
+
+        self.conn = sqlite3.connect("internship.db")
+        self.cursor = self.conn.cursor()
+        self.cursor.execute("SELECT * FROM internship")
+        rows = self.cursor.fetchall()
+        for row in rows:
+            self.tree.insert("", "end", values=row)
+        self.button_cancel = tk.Button(self, text="Cancel", command=self.cancel_list)
+        self.button_cancel.pack()
+
+    def cancel_list(self):
+        self.controller.show_frame(mainPage)
+
+
+class SearchInternship(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        label = tk.Label(self, text="Search Internship", font=LARGE_FONT)
+        label.pack(pady=10, padx=10)
+
+        self.parent = parent
+        self.conn = sqlite3.connect("internship.db")
+        self.cursor = self.conn.cursor()
+
+        self.label_c_id = tk.Label(self, text="Enter Comapny ID:")
+        self.label_c_id.pack()
+
+        self.enter_c_id = tk.Entry(self)
+        self.enter_c_id.pack()
+
+        self.label_tag_id = tk.Label(self, text="Enter Tag ID:")
+        self.label_tag_id.pack()
+
+        self.enter_tag_id = tk.Entry(self)
+        self.enter_tag_id.pack()
+
+        self.label_Start_date = tk.Label(self, text="Enter Start Date:")
+        self.label_Start_date.pack()
+
+        self.enter_Start_date = tk.Entry(self)
+        self.enter_Start_date.pack()
+
+        self.label_End_date = tk.Label(self, text="Enter End Date:")
+        self.label_End_date.pack()
+
+        self.enter_End_date = tk.Entry(self)
+        self.enter_End_date.pack()
+
+        self.search_button = tk.Button(self, text="Search", command=self.search)
+        self.search_button.pack()
+
+
+    def search(self):
+        c_id = self.enter_c_id.get()
+        tag_id = self.enter_tag_id.get()
+        start_date = self.enter_Start_date.get()
+        end_date = self.enter_End_date.get()
+
+        self.cursor.execute("SELECT * FROM internship WHERE c_id=? OR tag_id=? OR start_date=? OR end_date=?", (c_id, tag_id, start_date, end_date))
+        results = self.cursor.fetchall()
+
+        if results:
+            self.display_results(results)
+    def display_results(self, results):
+
+        results_frame = tk.Frame(self)
+        results_frame.pack()
+
+        header = ["ID", "Company ID", "Tag ID", "Start Date", "End Date"]
+        for i, col_name in enumerate(header):
+            header_label = tk.Label(results_frame, text=col_name, font=('Arial', 14, 'bold'))
+            header_label.grid(row=0, column=i, padx=5, pady=5)
+
+        for row_num, row_data in enumerate(results):
+            for col_num, col_data in enumerate(results):
+                result_label = tk.Label(results_frame, text=str(row_data[col_num]))
+                result_label.grid(row=row_num+1, column=col_num, padx=5, pady=5)
 
 
 
